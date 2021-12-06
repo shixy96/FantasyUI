@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CRUD Table</title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.19.1/dist/bootstrap-table.min.css">
+  <style>
+    .mr10 { margin-right: 10px; }
+    .alert {
+      padding: 0 14px;
+      margin-bottom: 0;
+      display: inline-block;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/bootstrap-table@1.19.1/dist/bootstrap-table.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>CRUD Table</h1>
+    <p class="toolbar">
+      <a class="create btn btn-secondary" href="javascript:">Create Item</a>
+      <span class="alert"></span>
+    </p>
+    <table id="table"></table>
+  </div>
+
+  <div id="modal" class="modal fade">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" class="form-control" name="name" placeholder="Name">
+          </div>
+          <div class="form-group">
+            <label>Stars</label>
+            <input type="number" class="form-control" name="stargazers_count" placeholder="Stars">
+          </div>
+          <div class="form-group">
+            <label>Forks</label>
+            <input type="number" class="form-control" name="forks_count" placeholder="Forks">
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea class="form-control" name="description" placeholder="Description"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary submit">Submit</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+
+<script>
+  var API_URL = 'http://localhost:3001/list/'
+  var $table = $('#table')
+  var $modal = $('#modal').modal({show: false})
+  var $alert = $('.alert').hide()
+
+  function showModal(title, row_) {
+    var row = row_ || {
+      id: '',
+      name: '',
+      stargazers_count: 0,
+      forks_count: 0,
+      description: ''
+    } // default row value
+
+    $modal.data('id', row.id)
+    $modal.find('.modal-title').text(title)
+    for (var name in row) {
+      if (row[name]) {
+        $modal.find('[name="' + name + '"]').val(row[name])
+      }
+    }
+    $modal.modal('show')
+  }
+
+  function showAlert(title, type) {
+    $alert.attr('class', 'alert alert-' + type || 'success')
+      .html('<i class="glyphicon glyphicon-check"></i> ' + title).show()
+    setTimeout(function () {
+      $alert.hide()
+    }, 3000)
+  }
+
+  $(function () {
+    $table.bootstrapTable({
+      url: API_URL,
+      showRefresh: true,
+      showColumns: true,
+      search: true,
+      toolbar: '.toolbar',
+      queryParams: function () {
+        return {}
+      },
+      columns: [
+        {
+          field: 'name',
+          title: 'Name'
+        },
+        {
+          field: 'stargazers_count',
+          title: 'Stars'
+        },
+        {
+          field: 'forks_count',
+          title: 'Forks'
+        },
+        {
+          field: 'description',
+          title: 'Description'
+        },
+        {
+          field: 'action',
+          title: 'Action',
+          align: 'center',
+          formatter: function actionFormatter(value) {
+            return [
+              '<a class="update mr10" href="javascript:" title="Update Item"><i class="fa fa-edit"></i></a>',
+              '<a class="remove" href="javascript:" title="Delete Item"><i class="fa fa-remove"></i></a>'
+            ].join('')
+          },
+          events: {
+            'click .update': function (e, value, row) {
+              showModal($(e.currentTarget).attr('title'), row)
+            },
+            'click .remove': function (e, value, row) {
+              if (confirm('Are you sure to delete this item?')) {
+                $.ajax({
+                  url: API_URL + row.id,
+                  type: 'delete',
+                  success: function () {
+                    $table.bootstrapTable('refresh')
+                    showAlert('Delete item successful!', 'success')
+                  },
+                  error: function () {
+                    showAlert('Delete item error!', 'danger')
+                  }
+                })
+              }
+            }
+          }
+        }
+      ]
+    })
+
+    // create event
+    $('.create').click(function () {
+      showModal($(this).text())
+    })
+
+    $modal.find('.submit').click(function () {
+      var row = {}
+
+      $modal.find('input[name]').each(function () {
+        row[$(this).attr('name')] = $(this).val()
+      })
+
+      $.ajax({
+        url: API_URL + ($modal.data('id') || ''),
+        type: $modal.data('id') ? 'put' : 'post',
+        contentType: 'application/json',
+        data: JSON.stringify(row),
+        success: function () {
+          $modal.modal('hide')
+          $table.bootstrapTable('refresh')
+          showAlert(($modal.data('id') ? 'Update' : 'Create') + ' item successful!', 'success')
+        },
+        error: function () {
+          $modal.modal('hide')
+          showAlert(($modal.data('id') ? 'Update' : 'Create') + ' item error!', 'danger')
+        }
+      })
+    })
+  })
+</script>
+</body>
+</html>
