@@ -2,7 +2,7 @@
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('jquery')) :
   typeof define === 'function' && define.amd ? define(['jquery'], factory) :
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.jQuery));
-}(this, (function ($) { 'use strict';
+})(this, (function ($) { 'use strict';
 
   function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
@@ -85,6 +85,8 @@
   function _possibleConstructorReturn(self, call) {
     if (call && (typeof call === "object" || typeof call === "function")) {
       return call;
+    } else if (call !== void 0) {
+      throw new TypeError("Derived constructors may only return object or undefined");
     }
 
     return _assertThisInitialized(self);
@@ -114,10 +116,10 @@
    * @update zhixin wen <wenzhixin2010@gmail.com>
    */
 
-  $__default['default'].fn.bootstrapTable.methods.push('changeTitle');
-  $__default['default'].fn.bootstrapTable.methods.push('changeLocale');
+  $__default["default"].fn.bootstrapTable.methods.push('changeTitle');
+  $__default["default"].fn.bootstrapTable.methods.push('changeLocale');
 
-  $__default['default'].BootstrapTable = /*#__PURE__*/function (_$$BootstrapTable) {
+  $__default["default"].BootstrapTable = /*#__PURE__*/function (_$$BootstrapTable) {
     _inherits(_class, _$$BootstrapTable);
 
     var _super = _createSuper(_class);
@@ -131,8 +133,8 @@
     _createClass(_class, [{
       key: "changeTitle",
       value: function changeTitle(locale) {
-        $__default['default'].each(this.options.columns, function (idx, columnList) {
-          $__default['default'].each(columnList, function (idx, column) {
+        $__default["default"].each(this.options.columns, function (idx, columnList) {
+          $__default["default"].each(columnList, function (idx, column) {
             if (column.field) {
               column.title = locale[column.field];
             }
@@ -154,6 +156,6 @@
     }]);
 
     return _class;
-  }($__default['default'].BootstrapTable);
+  }($__default["default"].BootstrapTable);
 
-})));
+}));
