@@ -1101,6 +1101,38 @@ class BootstrapTable {
     }
   }
 
+  getPaginationFromTo () {
+    const opts = this.options
+    let from
+    let to
+
+    if (this.totalPages < opts.paginationSuccessivelySize) {
+      from = 1
+      to = this.totalPages
+    } else {
+      from = opts.pageNumber - opts.paginationPagesBySide
+      to = from + (opts.paginationPagesBySide * 2)
+    }
+
+    if (opts.pageNumber < (opts.paginationSuccessivelySize - 1)) {
+      to = opts.paginationSuccessivelySize
+    }
+
+    if (opts.paginationSuccessivelySize > this.totalPages - from) {
+      from = from - (opts.paginationSuccessivelySize - (this.totalPages - from)) + 1
+    }
+
+    if (from < 1) {
+      from = 1
+    }
+
+    if (to > this.totalPages) {
+      to = this.totalPages
+    }
+
+    return { from, to }
+  }
+
   initPagination () {
     const opts = this.options
 
@@ -1224,33 +1256,13 @@ class BootstrapTable {
         Utils.sprintf(this.constants.html.pagination[0], Utils.sprintf(' pagination-%s', opts.iconSize)),
         Utils.sprintf(this.constants.html.paginationItem, ' page-pre', opts.formatSRPaginationPreText(), opts.paginationPreText))
 
-      if (this.totalPages < opts.paginationSuccessivelySize) {
-        from = 1
-        to = this.totalPages
-      } else {
-        from = opts.pageNumber - opts.paginationPagesBySide
-        to = from + (opts.paginationPagesBySide * 2)
-      }
-
-      if (opts.pageNumber < (opts.paginationSuccessivelySize - 1)) {
-        to = opts.paginationSuccessivelySize
-      }
-
-      if (opts.paginationSuccessivelySize > this.totalPages - from) {
-        from = from - (opts.paginationSuccessivelySize - (this.totalPages - from)) + 1
-      }
-
-      if (from < 1) {
-        from = 1
-      }
-
-      if (to > this.totalPages) {
-        to = this.totalPages
-      }
-
       const middleSize = Math.round(opts.paginationPagesBySide / 2)
       const pageItem = (i, classes = '') => Utils.sprintf(this.constants.html.paginationItem,
         classes + (i === opts.pageNumber ? ` ${this.constants.classes.paginationActive}` : ''), opts.formatSRPaginationPageText(i), i)
+      const fromTo = this.getPaginationFromTo()
+
+      from = fromTo.from
+      to = fromTo.to
 
       if (from > 1) {
         let max = opts.paginationPagesBySide
