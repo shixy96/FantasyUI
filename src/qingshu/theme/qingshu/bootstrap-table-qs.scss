@@ -1,3 +1,5 @@
+@import './bootstrap-table-pagination.scss';
+
 div.bootstrap-table {
     background: transparent;
 }
@@ -188,38 +190,4 @@ table th .sortable:after {
     position: absolute;
     left: 540px;
     top: 20px;
-}
-
-/*sticky-header*/
-.cover-helper {
-    display: none;
-}
-
-#cover-helper-left{
-    width: 48px;
-    height: 55px;
-    top: 56px;
-    left: 178px;
-    position: fixed;
-    background-color: #FFFFFF;
-    z-index: 102;
-}
-#cover-helper-right{
-    width: 48px;
-    height: 55px;
-    top: 56px;
-    right: 0px;
-    position: fixed;
-    background-color: #FFFFFF;
-    z-index: 102;
-}
-#cover-helper-mid{
-    height: 12px;
-    top: 100px;
-    left: 178px;
-    right: 0px;
-    position: fixed;
-    background-color: #FFFFFF;
-    z-index: 102;
-    border-bottom: solid 1px #EEEEEE;
 }

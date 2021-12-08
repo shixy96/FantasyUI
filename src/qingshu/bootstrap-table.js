@@ -1,8 +1,9 @@
 import '../bootstrap-table.js'
+import '../locale/bootstrap-table-zh-CN.js'
 
 $.extend($.fn.bootstrapTable.locales['zh-CN'], {
   formatShowingRows (pageFrom, pageTo, totalRows) {
-    return `总共 ${totalRows} 条记录`
+    return `共${totalRows}条数据`
   },
   formatSRPaginationPageText (page) {
     return `\u7B2C${page}\u9875`
@@ -66,7 +67,7 @@ $.BootstrapTable = class extends $.BootstrapTable {
     super.initPagination()
     const opts = this.options
 
-    if (this.totalPages <= 1) {
+    if (this.totalRows < 1) {
       this.$pagination.hide()
       return
     }
