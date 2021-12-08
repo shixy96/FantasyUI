@@ -2,9 +2,10 @@ window._config = {
   isDebug: location.hash.slice(1) === 'is-debug' ||
     ['localhost', '127.0.0.1', 'dev.bootstrap-table.com'].indexOf(location.hostname) > -1,
   cdnUrl: 'https://unpkg.com/bootstrap-table@1.19.1/dist/',
-  localUrl: '../bootstrap-table/src/',
-  testUrl: '/src/'
+  localUrl: '../dist/',
+  testUrl: '../src/'
 }
+window._config.isDebug = true
 
 function _getLink(file) {
   var url = file

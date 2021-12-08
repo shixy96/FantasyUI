@@ -13,10 +13,8 @@ function alphanum(a, b) {
     var n = 0;
 
     for (var i = 0; i <= t.length; i++) {
-      var _char = t.charAt(i);
-
-      var charCode = _char.charCodeAt(0);
-
+      var char = t.charAt(i);
+      var charCode = char.charCodeAt(0);
       var m = charCode === 46 || charCode >= 48 && charCode <= 57;
 
       if (m !== n) {
@@ -24,7 +22,7 @@ function alphanum(a, b) {
         n = m;
       }
 
-      tz[y] += _char;
+      tz[y] += char;
     }
 
     return tz;
