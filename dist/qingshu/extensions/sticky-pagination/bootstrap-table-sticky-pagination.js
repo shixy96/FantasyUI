@@ -210,11 +210,11 @@
   };
 
   var FunctionPrototype$1 = Function.prototype;
-  var bind$1 = FunctionPrototype$1.bind;
+  var bind = FunctionPrototype$1.bind;
   var call = FunctionPrototype$1.call;
-  var callBind = bind$1 && bind$1.bind(call);
+  var callBind = bind && bind.bind(call);
 
-  var functionUncurryThis = bind$1 ? function (fn) {
+  var functionUncurryThis = bind ? function (fn) {
     return fn && callBind(call, fn);
   } : function (fn) {
     return fn && function () {
@@ -466,12 +466,12 @@
     return isSymbol(key) ? key : key + '';
   };
 
-  var document$1 = global_1.document;
+  var document = global_1.document;
   // typeof document.createElement is 'object' in old IE
-  var EXISTS$1 = isObject(document$1) && isObject(document$1.createElement);
+  var EXISTS$1 = isObject(document) && isObject(document.createElement);
 
   var documentCreateElement = function (it) {
-    return EXISTS$1 ? document$1.createElement(it) : {};
+    return EXISTS$1 ? document.createElement(it) : {};
   };
 
   // Thank's IE8 for his funny defineProperty
@@ -715,7 +715,7 @@
   };
 
   // `Array.prototype.{ indexOf, includes }` methods implementation
-  var createMethod$1 = function (IS_INCLUDES) {
+  var createMethod = function (IS_INCLUDES) {
     return function ($this, el, fromIndex) {
       var O = toIndexedObject($this);
       var length = lengthOfArrayLike(O);
@@ -737,26 +737,26 @@
   var arrayIncludes = {
     // `Array.prototype.includes` method
     // https://tc39.es/ecma262/#sec-array.prototype.includes
-    includes: createMethod$1(true),
+    includes: createMethod(true),
     // `Array.prototype.indexOf` method
     // https://tc39.es/ecma262/#sec-array.prototype.indexof
-    indexOf: createMethod$1(false)
+    indexOf: createMethod(false)
   };
 
   var indexOf = arrayIncludes.indexOf;
 
 
-  var push$1 = functionUncurryThis([].push);
+  var push = functionUncurryThis([].push);
 
   var objectKeysInternal = function (object, names) {
     var O = toIndexedObject(object);
     var i = 0;
     var result = [];
     var key;
-    for (key in O) !hasOwnProperty_1(hiddenKeys$1, key) && hasOwnProperty_1(O, key) && push$1(result, key);
+    for (key in O) !hasOwnProperty_1(hiddenKeys$1, key) && hasOwnProperty_1(O, key) && push(result, key);
     // Don't enum bug & hidden keys
     while (names.length > i) if (hasOwnProperty_1(O, key = names[i++])) {
-      ~indexOf(result, key) || push$1(result, key);
+      ~indexOf(result, key) || push(result, key);
     }
     return result;
   };
@@ -886,21 +886,17 @@
     }
   };
 
-  var bind = functionUncurryThis(functionUncurryThis.bind);
-
-  // optional / simple context binding
-  var functionBindContext = function (fn, that) {
-    aCallable(fn);
-    return that === undefined ? fn : bind ? bind(fn, that) : function (/* ...args */) {
-      return fn.apply(that, arguments);
-    };
-  };
-
   // `IsArray` abstract operation
   // https://tc39.es/ecma262/#sec-isarray
   // eslint-disable-next-line es/no-array-isarray -- safe
   var isArray = Array.isArray || function isArray(argument) {
     return classofRaw(argument) == 'Array';
+  };
+
+  var createProperty = function (object, key, value) {
+    var propertyKey = toPropertyKey(key);
+    if (propertyKey in object) objectDefineProperty.f(object, propertyKey, createPropertyDescriptor(0, value));
+    else object[propertyKey] = value;
   };
 
   var TO_STRING_TAG$1 = wellKnownSymbol('toStringTag');
@@ -996,234 +992,6 @@
     return new (arraySpeciesConstructor(originalArray))(length === 0 ? 0 : length);
   };
 
-  var push = functionUncurryThis([].push);
-
-  // `Array.prototype.{ forEach, map, filter, some, every, find, findIndex, filterReject }` methods implementation
-  var createMethod = function (TYPE) {
-    var IS_MAP = TYPE == 1;
-    var IS_FILTER = TYPE == 2;
-    var IS_SOME = TYPE == 3;
-    var IS_EVERY = TYPE == 4;
-    var IS_FIND_INDEX = TYPE == 6;
-    var IS_FILTER_REJECT = TYPE == 7;
-    var NO_HOLES = TYPE == 5 || IS_FIND_INDEX;
-    return function ($this, callbackfn, that, specificCreate) {
-      var O = toObject($this);
-      var self = indexedObject(O);
-      var boundFunction = functionBindContext(callbackfn, that);
-      var length = lengthOfArrayLike(self);
-      var index = 0;
-      var create = specificCreate || arraySpeciesCreate;
-      var target = IS_MAP ? create($this, length) : IS_FILTER || IS_FILTER_REJECT ? create($this, 0) : undefined;
-      var value, result;
-      for (;length > index; index++) if (NO_HOLES || index in self) {
-        value = self[index];
-        result = boundFunction(value, index, O);
-        if (TYPE) {
-          if (IS_MAP) target[index] = result; // map
-          else if (result) switch (TYPE) {
-            case 3: return true;              // some
-            case 5: return value;             // find
-            case 6: return index;             // findIndex
-            case 2: push(target, value);      // filter
-          } else switch (TYPE) {
-            case 4: return false;             // every
-            case 7: push(target, value);      // filterReject
-          }
-        }
-      }
-      return IS_FIND_INDEX ? -1 : IS_SOME || IS_EVERY ? IS_EVERY : target;
-    };
-  };
-
-  var arrayIteration = {
-    // `Array.prototype.forEach` method
-    // https://tc39.es/ecma262/#sec-array.prototype.foreach
-    forEach: createMethod(0),
-    // `Array.prototype.map` method
-    // https://tc39.es/ecma262/#sec-array.prototype.map
-    map: createMethod(1),
-    // `Array.prototype.filter` method
-    // https://tc39.es/ecma262/#sec-array.prototype.filter
-    filter: createMethod(2),
-    // `Array.prototype.some` method
-    // https://tc39.es/ecma262/#sec-array.prototype.some
-    some: createMethod(3),
-    // `Array.prototype.every` method
-    // https://tc39.es/ecma262/#sec-array.prototype.every
-    every: createMethod(4),
-    // `Array.prototype.find` method
-    // https://tc39.es/ecma262/#sec-array.prototype.find
-    find: createMethod(5),
-    // `Array.prototype.findIndex` method
-    // https://tc39.es/ecma262/#sec-array.prototype.findIndex
-    findIndex: createMethod(6),
-    // `Array.prototype.filterReject` method
-    // https://github.com/tc39/proposal-array-filtering
-    filterReject: createMethod(7)
-  };
-
-  // `Object.keys` method
-  // https://tc39.es/ecma262/#sec-object.keys
-  // eslint-disable-next-line es/no-object-keys -- safe
-  var objectKeys = Object.keys || function keys(O) {
-    return objectKeysInternal(O, enumBugKeys);
-  };
-
-  // `Object.defineProperties` method
-  // https://tc39.es/ecma262/#sec-object.defineproperties
-  // eslint-disable-next-line es/no-object-defineproperties -- safe
-  var objectDefineProperties = descriptors ? Object.defineProperties : function defineProperties(O, Properties) {
-    anObject(O);
-    var props = toIndexedObject(Properties);
-    var keys = objectKeys(Properties);
-    var length = keys.length;
-    var index = 0;
-    var key;
-    while (length > index) objectDefineProperty.f(O, key = keys[index++], props[key]);
-    return O;
-  };
-
-  var html = getBuiltIn('document', 'documentElement');
-
-  /* global ActiveXObject -- old IE, WSH */
-
-
-
-
-
-
-
-
-  var GT = '>';
-  var LT = '<';
-  var PROTOTYPE = 'prototype';
-  var SCRIPT = 'script';
-  var IE_PROTO = sharedKey('IE_PROTO');
-
-  var EmptyConstructor = function () { /* empty */ };
-
-  var scriptTag = function (content) {
-    return LT + SCRIPT + GT + content + LT + '/' + SCRIPT + GT;
-  };
-
-  // Create object with fake `null` prototype: use ActiveX Object with cleared prototype
-  var NullProtoObjectViaActiveX = function (activeXDocument) {
-    activeXDocument.write(scriptTag(''));
-    activeXDocument.close();
-    var temp = activeXDocument.parentWindow.Object;
-    activeXDocument = null; // avoid memory leak
-    return temp;
-  };
-
-  // Create object with fake `null` prototype: use iframe Object with cleared prototype
-  var NullProtoObjectViaIFrame = function () {
-    // Thrash, waste and sodomy: IE GC bug
-    var iframe = documentCreateElement('iframe');
-    var JS = 'java' + SCRIPT + ':';
-    var iframeDocument;
-    iframe.style.display = 'none';
-    html.appendChild(iframe);
-    // https://github.com/zloirock/core-js/issues/475
-    iframe.src = String(JS);
-    iframeDocument = iframe.contentWindow.document;
-    iframeDocument.open();
-    iframeDocument.write(scriptTag('document.F=Object'));
-    iframeDocument.close();
-    return iframeDocument.F;
-  };
-
-  // Check for document.domain and active x support
-  // No need to use active x approach when document.domain is not set
-  // see https://github.com/es-shims/es5-shim/issues/150
-  // variation of https://github.com/kitcambridge/es5-shim/commit/4f738ac066346
-  // avoid IE GC bug
-  var activeXDocument;
-  var NullProtoObject = function () {
-    try {
-      activeXDocument = new ActiveXObject('htmlfile');
-    } catch (error) { /* ignore */ }
-    NullProtoObject = typeof document != 'undefined'
-      ? document.domain && activeXDocument
-        ? NullProtoObjectViaActiveX(activeXDocument) // old IE
-        : NullProtoObjectViaIFrame()
-      : NullProtoObjectViaActiveX(activeXDocument); // WSH
-    var length = enumBugKeys.length;
-    while (length--) delete NullProtoObject[PROTOTYPE][enumBugKeys[length]];
-    return NullProtoObject();
-  };
-
-  hiddenKeys$1[IE_PROTO] = true;
-
-  // `Object.create` method
-  // https://tc39.es/ecma262/#sec-object.create
-  var objectCreate = Object.create || function create(O, Properties) {
-    var result;
-    if (O !== null) {
-      EmptyConstructor[PROTOTYPE] = anObject(O);
-      result = new EmptyConstructor();
-      EmptyConstructor[PROTOTYPE] = null;
-      // add "__proto__" for Object.getPrototypeOf polyfill
-      result[IE_PROTO] = O;
-    } else result = NullProtoObject();
-    return Properties === undefined ? result : objectDefineProperties(result, Properties);
-  };
-
-  var UNSCOPABLES = wellKnownSymbol('unscopables');
-  var ArrayPrototype = Array.prototype;
-
-  // Array.prototype[@@unscopables]
-  // https://tc39.es/ecma262/#sec-array.prototype-@@unscopables
-  if (ArrayPrototype[UNSCOPABLES] == undefined) {
-    objectDefineProperty.f(ArrayPrototype, UNSCOPABLES, {
-      configurable: true,
-      value: objectCreate(null)
-    });
-  }
-
-  // add a key to Array.prototype[@@unscopables]
-  var addToUnscopables = function (key) {
-    ArrayPrototype[UNSCOPABLES][key] = true;
-  };
-
-  var $find = arrayIteration.find;
-
-
-  var FIND = 'find';
-  var SKIPS_HOLES = true;
-
-  // Shouldn't skip holes
-  if (FIND in []) Array(1)[FIND](function () { SKIPS_HOLES = false; });
-
-  // `Array.prototype.find` method
-  // https://tc39.es/ecma262/#sec-array.prototype.find
-  _export({ target: 'Array', proto: true, forced: SKIPS_HOLES }, {
-    find: function find(callbackfn /* , that = undefined */) {
-      return $find(this, callbackfn, arguments.length > 1 ? arguments[1] : undefined);
-    }
-  });
-
-  // https://tc39.es/ecma262/#sec-array.prototype-@@unscopables
-  addToUnscopables(FIND);
-
-  // `Object.prototype.toString` method implementation
-  // https://tc39.es/ecma262/#sec-object.prototype.tostring
-  var objectToString = toStringTagSupport ? {}.toString : function toString() {
-    return '[object ' + classof(this) + ']';
-  };
-
-  // `Object.prototype.toString` method
-  // https://tc39.es/ecma262/#sec-object.prototype.tostring
-  if (!toStringTagSupport) {
-    redefine(Object.prototype, 'toString', objectToString, { unsafe: true });
-  }
-
-  var createProperty = function (object, key, value) {
-    var propertyKey = toPropertyKey(key);
-    if (propertyKey in object) objectDefineProperty.f(object, propertyKey, createPropertyDescriptor(0, value));
-    else object[propertyKey] = value;
-  };
-
   var SPECIES = wellKnownSymbol('species');
 
   var arrayMethodHasSpeciesSupport = function (METHOD_NAME) {
@@ -1290,19 +1058,10 @@
     }
   });
 
-  /**
-   * @author vincent loh <vincent.ml@gmail.com>
-   * @update J Manuel Corona <jmcg92@gmail.com>
-   * @update zhixin wen <wenzhixin2010@gmail.com>
-   */
-
-  var Utils = $__default["default"].fn.bootstrapTable.utils;
   $__default["default"].extend($__default["default"].fn.bootstrapTable.defaults, {
-    stickyHeader: false,
-    stickyHeaderOffsetY: 0,
-    stickyHeaderOffsetLeft: 0,
-    stickyHeaderOffsetRight: 0
+    paginationFixed: true
   });
+  var Utils = $__default["default"].fn.bootstrapTable.utils;
 
   $__default["default"].BootstrapTable = /*#__PURE__*/function (_$$BootstrapTable) {
     _inherits(_class, _$$BootstrapTable);
@@ -1316,239 +1075,61 @@
     }
 
     _createClass(_class, [{
-      key: "initHeader",
-      value: function initHeader() {
-        var _get2,
-            _this = this;
+      key: "initPagination",
+      value: function initPagination() {
+        var _this = this;
 
-        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-          args[_key] = arguments[_key];
-        }
+        _get(_getPrototypeOf(_class.prototype), "initPagination", this).call(this);
 
-        (_get2 = _get(_getPrototypeOf(_class.prototype), "initHeader", this)).call.apply(_get2, [this].concat(args));
-
-        if (!this.options.stickyHeader) {
+        if (!this.options.paginationFixed) {
           return;
         }
 
-        this.$tableBody.find('.sticky-header-container,.sticky_anchor_begin,.sticky_anchor_end').remove();
-        this.$el.before('<div class="sticky-header-container"></div>');
-        this.$el.before('<div class="sticky_anchor_begin"></div>');
-        this.$el.after('<div class="sticky_anchor_end"></div>');
-        this.$header.addClass('sticky-header'); // clone header just once, to be used as sticky header
-        // deep clone header, using source header affects tbody>td width
-
-        this.$stickyContainer = this.$tableBody.find('.sticky-header-container');
-        this.$stickyBegin = this.$tableBody.find('.sticky_anchor_begin');
-        this.$stickyEnd = this.$tableBody.find('.sticky_anchor_end');
-        this.$stickyHeader = this.$header.clone(true, true); // render sticky on window scroll or resize
-
         var resizeEvent = Utils.getEventName('resize.sticky-header-table', this.$el.attr('id'));
-        var scrollEvent = Utils.getEventName('scroll.sticky-header-table', this.$el.attr('id'));
+        var scrollEvent = Utils.getEventName('scroll.sticky-pagination', this.$el.attr('id'));
         $__default["default"](window).off(resizeEvent).on(resizeEvent, function () {
-          return _this.renderStickyHeader();
+          return _this.renderStickyPagination();
         });
         $__default["default"](window).off(scrollEvent).on(scrollEvent, function () {
-          return _this.renderStickyHeader();
+          return _this.renderStickyPagination();
         });
-        this.$tableBody.off('scroll').on('scroll', function () {
-          return _this.matchPositionX();
-        });
-      }
-    }, {
-      key: "onColumnSearch",
-      value: function onColumnSearch(_ref) {
-        var currentTarget = _ref.currentTarget,
-            keyCode = _ref.keyCode;
-
-        _get(_getPrototypeOf(_class.prototype), "onColumnSearch", this).call(this, {
-          currentTarget: currentTarget,
-          keyCode: keyCode
-        });
-
-        this.renderStickyHeader();
       }
     }, {
       key: "resetView",
       value: function resetView() {
-        var _get3,
-            _this2 = this;
+        var _get2;
 
-        for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-          args[_key2] = arguments[_key2];
+        for (var _len = arguments.length, arg = new Array(_len), _key = 0; _key < _len; _key++) {
+          arg[_key] = arguments[_key];
         }
 
-        (_get3 = _get(_getPrototypeOf(_class.prototype), "resetView", this)).call.apply(_get3, [this].concat(args));
+        (_get2 = _get(_getPrototypeOf(_class.prototype), "resetView", this)).call.apply(_get2, [this].concat(arg));
 
-        $__default["default"]('.bootstrap-table.fullscreen').off('scroll').on('scroll', function () {
-          return _this2.renderStickyHeader();
-        });
+        this.renderStickyPagination();
       }
     }, {
-      key: "getCaret",
-      value: function getCaret() {
-        var _get4;
+      key: "renderStickyPagination",
+      value: function renderStickyPagination() {
+        var $window = $__default["default"](window);
+        var windowHeight = $window.height();
+        var paginationHeight = this.$pagination.height();
+        var top = $window.scrollTop();
+        var start = this.$stickyBegin.offset().top - this.options.stickyHeaderOffsetY + this.$header.height() + paginationHeight;
+        var end = this.$stickyEnd.offset().top - this.options.stickyHeaderOffsetY;
+        var tableWidth = this.$tableBody[0].getBoundingClientRect().width;
 
-        for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-          args[_key3] = arguments[_key3];
-        }
-
-        (_get4 = _get(_getPrototypeOf(_class.prototype), "getCaret", this)).call.apply(_get4, [this].concat(args));
-
-        if (this.$stickyHeader) {
-          var $ths = this.$stickyHeader.find('th');
-          this.$header.find('th').each(function (i, th) {
-            $ths.eq(i).find('.sortable').attr('class', $__default["default"](th).find('.sortable').attr('class'));
-          });
-        }
-      }
-    }, {
-      key: "horizontalScroll",
-      value: function horizontalScroll() {
-        var _this3 = this;
-
-        _get(_getPrototypeOf(_class.prototype), "horizontalScroll", this).call(this);
-
-        this.$tableBody.on('scroll', function () {
-          return _this3.matchPositionX();
-        });
-      }
-    }, {
-      key: "initStickyHeader",
-      value: function initStickyHeader() {
-        this.$stickyHeader = this.$header.clone(true, true);
-      }
-    }, {
-      key: "initStickyFilterControl",
-      value: function initStickyFilterControl() {
-        var that = this;
-        $__default["default"](this.$stickyHeader).off('keyup change mouseup').on('keyup change mouse', function (e) {
-          var $target = $__default["default"](e.target);
-          var value = $target.val();
-          var field = $target.parents('th').data('field');
-          var $coreTh = that.$header.find("th[data-field=\"".concat(field, "\"]"));
-
-          if ($target.is('input')) {
-            $coreTh.find('input').val(value);
-          } else if ($target.is('select')) {
-            var $select = $coreTh.find('select');
-            $select.find('option[selected]').removeAttr('selected');
-            $select.find("option[value=\"".concat(value, "\"]")).attr('selected', true);
-          }
-
-          that.triggerSearch();
-        });
-      }
-    }, {
-      key: "renderStickyHeader",
-      value: function renderStickyHeader() {
-        var _this4 = this;
-
-        this.initStickyHeader();
-
-        if (this.options.filterControl) {
-          this.initStickyFilterControl();
-        }
-
-        var top = $__default["default"](window).scrollTop(); // top anchor scroll position, minus header height
-
-        var start = this.$stickyBegin.offset().top - this.options.stickyHeaderOffsetY; // bottom anchor scroll position, minus header height, minus sticky height
-
-        var end = this.$stickyEnd.offset().top - this.options.stickyHeaderOffsetY - this.$header.height(); // show sticky when top anchor touches header, and when bottom anchor not exceeded
-
-        if (top > start && top <= end) {
-          // ensure clone and source column widths are the same
-          this.$stickyHeader.find('tr').each(function (indexRows, rows) {
-            var columns = $__default["default"](rows).find('th');
-            columns.each(function (indexColumns, celd) {
-              $__default["default"](celd).css('min-width', _this4.$header.find("tr:eq(".concat(indexRows, ")")).find("th:eq(".concat(indexColumns, ")")).css('width'));
-            });
-          }); // match bootstrap table style
-
-          this.$stickyContainer.show().addClass('fix-sticky fixed-table-container'); // stick it in position
-
-          var coords = this.$tableBody[0].getBoundingClientRect();
-          var width = '100%';
-          var stickyHeaderOffsetLeft = this.options.stickyHeaderOffsetLeft;
-          var stickyHeaderOffsetRight = this.options.stickyHeaderOffsetRight;
-
-          if (!stickyHeaderOffsetLeft) {
-            stickyHeaderOffsetLeft = coords.left;
-          }
-
-          if (!stickyHeaderOffsetRight) {
-            width = "".concat(coords.width, "px");
-          }
-
-          if (this.$el.closest('.bootstrap-table').hasClass('fullscreen')) {
-            stickyHeaderOffsetLeft = 0;
-            stickyHeaderOffsetRight = 0;
-            width = '100%';
-          }
-
-          this.$stickyContainer.css('top', "".concat(this.options.stickyHeaderOffsetY, "px"));
-          this.$stickyContainer.css('left', "".concat(stickyHeaderOffsetLeft, "px"));
-          this.$stickyContainer.css('right', "".concat(stickyHeaderOffsetRight, "px"));
-          this.$stickyContainer.css('width', "".concat(width)); // create scrollable container for header
-
-          this.$stickyTable = $__default["default"]('<table/>');
-          this.$stickyTable.addClass(this.options.classes); // append cloned header to dom
-
-          this.$stickyContainer.html(this.$stickyTable.append(this.$stickyHeader)); // match clone and source header positions when left-right scroll
-
-          this.matchPositionX();
+        if (start - top < windowHeight && end + paginationHeight - top > windowHeight) {
+          this.$pagination.css({
+            position: 'fixed',
+            bottom: '0',
+            width: "".concat(tableWidth, "px")
+          }); // this.showScrollbar()
         } else {
-          this.$stickyContainer.removeClass('fix-sticky').hide();
-        }
-      }
-    }, {
-      key: "matchPositionX",
-      value: function matchPositionX() {
-        this.$stickyContainer.scrollLeft(this.$tableBody.scrollLeft());
-      }
-    }]);
-
-    return _class;
-  }($__default["default"].BootstrapTable);
-
-  $__default["default"].BootstrapTable = /*#__PURE__*/function (_$$BootstrapTable) {
-    _inherits(_class, _$$BootstrapTable);
-
-    var _super = _createSuper(_class);
-
-    function _class() {
-      _classCallCheck(this, _class);
-
-      return _super.apply(this, arguments);
-    }
-
-    _createClass(_class, [{
-      key: "initHeader",
-      value: function initHeader() {
-        _get(_getPrototypeOf(_class.prototype), "initHeader", this).call(this); // for element selector, like id selector, in table header
-
-
-        this.$tableBody.find('.sticky-header-container').insertAfter(this.$tableBody.find('.sticky_anchor_end'));
-      }
-    }, {
-      key: "initStickyHeader",
-      value: function initStickyHeader() {
-        // TODO: clone select2 select
-        _get(_getPrototypeOf(_class.prototype), "initStickyHeader", this).call(this);
-      }
-    }, {
-      key: "renderStickyHeader",
-      value: function renderStickyHeader() {
-        var top = $__default["default"](window).scrollTop();
-        var start = this.$stickyBegin.offset().top - this.options.stickyHeaderOffsetY;
-        var end = this.$stickyEnd.offset().top - this.options.stickyHeaderOffsetY - this.$header.height();
-
-        if (top > start && top <= end) {
-          if (this.$stickyContainer.is(':empty')) {
-            _get(_getPrototypeOf(_class.prototype), "renderStickyHeader", this).call(this);
-          }
-        } else {
-          this.$stickyContainer.removeClass('fix-sticky').hide().empty();
+          this.$pagination.css({
+            position: 'relative',
+            bottom: 'initial',
+            width: "".concat(tableWidth, "px")
+          }); // this.hideScrollbar()
         }
       }
     }]);

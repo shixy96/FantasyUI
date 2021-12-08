@@ -1234,6 +1234,37 @@
     redefine(Object.prototype, 'toString', objectToString, { unsafe: true });
   }
 
+  var arrayMethodIsStrict = function (METHOD_NAME, argument) {
+    var method = [][METHOD_NAME];
+    return !!method && fails(function () {
+      // eslint-disable-next-line no-useless-call,no-throw-literal -- required for testing
+      method.call(null, argument || function () { throw 1; }, 1);
+    });
+  };
+
+  /* eslint-disable es/no-array-prototype-indexof -- required for testing */
+
+
+  var $IndexOf = arrayIncludes.indexOf;
+
+
+  var un$IndexOf = functionUncurryThis([].indexOf);
+
+  var NEGATIVE_ZERO = !!un$IndexOf && 1 / un$IndexOf([1], 1, -0) < 0;
+  var STRICT_METHOD = arrayMethodIsStrict('indexOf');
+
+  // `Array.prototype.indexOf` method
+  // https://tc39.es/ecma262/#sec-array.prototype.indexof
+  _export({ target: 'Array', proto: true, forced: NEGATIVE_ZERO || !STRICT_METHOD }, {
+    indexOf: function indexOf(searchElement /* , fromIndex = 0 */) {
+      var fromIndex = arguments.length > 1 ? arguments[1] : undefined;
+      return NEGATIVE_ZERO
+        // convert -0 to +0
+        ? un$IndexOf(this, searchElement, fromIndex) || 0
+        : $IndexOf(this, searchElement, fromIndex);
+    }
+  });
+
   var createProperty = function (object, key, value) {
     var propertyKey = toPropertyKey(key);
     if (propertyKey in object) objectDefineProperty.f(object, propertyKey, createPropertyDescriptor(0, value));
@@ -1382,37 +1413,6 @@
   // https://tc39.es/ecma262/#sec-parseint-string-radix
   _export({ global: true, forced: parseInt != numberParseInt }, {
     parseInt: numberParseInt
-  });
-
-  var arrayMethodIsStrict = function (METHOD_NAME, argument) {
-    var method = [][METHOD_NAME];
-    return !!method && fails(function () {
-      // eslint-disable-next-line no-useless-call,no-throw-literal -- required for testing
-      method.call(null, argument || function () { throw 1; }, 1);
-    });
-  };
-
-  /* eslint-disable es/no-array-prototype-indexof -- required for testing */
-
-
-  var $IndexOf = arrayIncludes.indexOf;
-
-
-  var un$IndexOf = functionUncurryThis([].indexOf);
-
-  var NEGATIVE_ZERO = !!un$IndexOf && 1 / un$IndexOf([1], 1, -0) < 0;
-  var STRICT_METHOD = arrayMethodIsStrict('indexOf');
-
-  // `Array.prototype.indexOf` method
-  // https://tc39.es/ecma262/#sec-array.prototype.indexof
-  _export({ target: 'Array', proto: true, forced: NEGATIVE_ZERO || !STRICT_METHOD }, {
-    indexOf: function indexOf(searchElement /* , fromIndex = 0 */) {
-      var fromIndex = arguments.length > 1 ? arguments[1] : undefined;
-      return NEGATIVE_ZERO
-        // convert -0 to +0
-        ? un$IndexOf(this, searchElement, fromIndex) || 0
-        : $IndexOf(this, searchElement, fromIndex);
-    }
   });
 
   // Reasonable defaults
@@ -1873,6 +1873,159 @@
         }
 
         this.$stickyContainer.eq(0).scrollLeft(this.$tableBody.scrollLeft());
+      }
+    }]);
+
+    return _class;
+  }($__default["default"].BootstrapTable);
+
+  $__default["default"].BootstrapTable = /*#__PURE__*/function (_$$BootstrapTable) {
+    _inherits(_class, _$$BootstrapTable);
+
+    var _super = _createSuper(_class);
+
+    function _class() {
+      _classCallCheck(this, _class);
+
+      return _super.apply(this, arguments);
+    }
+
+    _createClass(_class, [{
+      key: "initFixedColumnsEvents",
+      value:
+      /**
+       * inherit from bootstrap-table-fixed-columns
+       * remove duplicate listener of tr
+       */
+      function initFixedColumnsEvents() {
+        var _this = this;
+
+        var toggleHover = function toggleHover(e, toggle) {
+          var tr = "tr[data-index=\"".concat($__default["default"](e.currentTarget).data('index'), "\"]");
+
+          var $trs = _this.$tableBody.find(tr);
+
+          if (_this.$fixedBody) {
+            $trs = $trs.add(_this.$fixedBody.find(tr));
+          }
+
+          if (_this.$fixedBodyRight) {
+            $trs = $trs.add(_this.$fixedBodyRight.find(tr));
+          }
+
+          $trs.css('background-color', toggle ? $__default["default"](e.currentTarget).css('background-color') : '');
+        };
+
+        this.$tableBody.find('tr').off('mouseenter mouseleave').hover(function (e) {
+          toggleHover(e, true);
+        }, function (e) {
+          toggleHover(e, false);
+        });
+        var isFirefox = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+        var mousewheel = isFirefox ? 'DOMMouseScroll' : 'mousewheel';
+
+        var updateScroll = function updateScroll(e, fixedBody) {
+          var normalized = normalizeWheel(e);
+          var deltaY = Math.ceil(normalized.pixelY);
+          var top = _this.$tableBody.scrollTop() + deltaY;
+
+          if (deltaY < 0 && top > 0 || deltaY > 0 && top < fixedBody.scrollHeight - fixedBody.clientHeight) {
+            e.preventDefault();
+          }
+
+          _this.$tableBody.scrollTop(top);
+
+          if (_this.$fixedBody) {
+            _this.$fixedBody.scrollTop(top);
+          }
+
+          if (_this.$fixedBodyRight) {
+            _this.$fixedBodyRight.scrollTop(top);
+          }
+        };
+
+        if (this.needFixedColumns && this.options.fixedNumber) {
+          this.$fixedBody[0].addEventListener(mousewheel, function (e) {
+            updateScroll(e, _this.$fixedBody[0]);
+          });
+        }
+
+        if (this.needFixedColumns && this.options.fixedRightNumber) {
+          this.$fixedBodyRight.off('scroll').on('scroll', function () {
+            var top = _this.$fixedBodyRight.scrollTop();
+
+            _this.$tableBody.scrollTop(top);
+
+            if (_this.$fixedBody) {
+              _this.$fixedBody.scrollTop(top);
+            }
+          });
+        }
+
+        if (this.options.filterControl) {
+          $__default["default"](this.$fixedColumns).off('keyup change').on('keyup change', function (e) {
+            var $target = $__default["default"](e.target);
+            var value = $target.val();
+            var field = $target.parents('th').data('field');
+
+            var $coreTh = _this.$header.find("th[data-field=\"".concat(field, "\"]"));
+
+            if ($target.is('input')) {
+              $coreTh.find('input').val(value);
+            } else if ($target.is('select')) {
+              var $select = $coreTh.find('select');
+              $select.find('option[selected]').removeAttr('selected');
+              $select.find("option[value=\"".concat(value, "\"]")).attr('selected', true);
+            }
+
+            _this.triggerSearch();
+          });
+        }
+      }
+      /**
+       * inherit from bootstrap-table-fixed-columns
+       * overwrite fixed column position and width
+       */
+
+    }, {
+      key: "renderFixedStickyHeader",
+      value: function renderFixedStickyHeader() {
+        if (!this.options.stickyHeader) {
+          return;
+        }
+
+        var coords = this.$tableBody[0].getBoundingClientRect();
+        var stickyHeaderOffsetLeft = this.options.stickyHeaderOffsetLeft;
+        var stickyHeaderOffsetRight = this.options.stickyHeaderOffsetRight;
+
+        if (!stickyHeaderOffsetLeft) {
+          stickyHeaderOffsetLeft = coords.left;
+        }
+
+        if (!stickyHeaderOffsetRight) {
+          stickyHeaderOffsetRight = "calc(100% - ".concat(coords.right, "px)");
+        }
+
+        if (this.$el.closest('.bootstrap-table').hasClass('fullscreen')) {
+          stickyHeaderOffsetLeft = 0;
+          stickyHeaderOffsetRight = 0;
+        }
+
+        if (this.needFixedColumns && this.options.fixedNumber) {
+          this.$fixedColumns.css('z-index', 101).find('.sticky-header-container').css({
+            right: '',
+            left: stickyHeaderOffsetLeft
+          }).width(this.$fixedColumns.outerWidth());
+        }
+
+        if (this.needFixedColumns && this.options.fixedRightNumber) {
+          var $stickyHeaderContainerRight = this.$fixedColumnsRight.find('.sticky-header-container');
+          this.$fixedColumnsRight.css('z-index', 101);
+          $stickyHeaderContainerRight.css({
+            left: '',
+            right: stickyHeaderOffsetRight
+          }).width(this.$fixedColumnsRight.outerWidth()).scrollLeft($stickyHeaderContainerRight.find('.table').outerWidth());
+        }
       }
     }]);
 
